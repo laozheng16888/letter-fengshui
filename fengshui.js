@@ -11,8 +11,8 @@ document.getElementById("fengshui-form").addEventListener("submit", function(eve
 
   window.fullReportLink = fullReportLink;
 
-  // 调用四柱排盘
-  const baziResult = calculateFourPillars(birthdate, birthtime);
+  // 重点修正部分（decode回正常格式用于排盘）
+  const baziResult = calculateFourPillars(decodeURIComponent(birthdate), decodeURIComponent(birthtime));
   generateSimpleReport(baziResult, decodeURIComponent(name));
 });
 
@@ -90,7 +90,7 @@ function generateSimpleReport(baziResult, name) {
   `;
 }
 
-// 简单五行运势示例（可以以后扩展成更复杂）
+// 简单五行运势示例
 function getLuckyElement(year, month, day, hour) {
   const elements = [
     {
