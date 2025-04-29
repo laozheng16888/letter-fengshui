@@ -45,6 +45,6 @@ function generateReport(baziResult, name) {
     <p>Your approach to finances is careful, preferring steady growth over high-risk ventures.</p>
     <h3>Lucky Elements:</h3>
     <p>Your lucky elements are Water and Metal. Favorable color: White.</p>
-    <button onclick="window.location.href='/products/full-report'">Unlock Full Detailed Report for $4.99</button>
+    <button onclick="window.location.href='https://betterfengshui.com/pages/full-feng-shui-destiny-report'">Unlock Full Detailed Report for $4.99</button>
   `;
 }
