@@ -1,139 +1,136 @@
-document.getElementById("fengshui-form").addEventListener("submit", function(event) {
+document.getElementById("fengshui-form").addEventListener("submit", function (event) {
   event.preventDefault();
 
   const name = encodeURIComponent(document.getElementById("fullname").value);
-  const birthdate = encodeURIComponent(document.getElementById("birthdate").value);
-  const birthtime = encodeURIComponent(document.getElementById("birthtime").value);
+  const birthdate = decodeURIComponent(document.getElementById("birthdate").value);
+  const birthtime = decodeURIComponent(document.getElementById("birthtime").value);
   const birthplace = encodeURIComponent(document.getElementById("birthplace").value);
 
-  // 生成专属完整版报告链接
   const fullReportLink = `/pages/full-report?name=${name}&birthdate=${birthdate}&birthtime=${birthtime}&birthplace=${birthplace}`;
-
   window.fullReportLink = fullReportLink;
 
-  // 重点修正部分（decode回正常格式用于排盘）
-  const baziResult = calculateFourPillars(decodeURIComponent(birthdate), decodeURIComponent(birthtime));
+  const baziResult = calculateBaZi(birthdate, birthtime);
   generateSimpleReport(baziResult, decodeURIComponent(name));
 });
 
-// 简单四柱推算
-function calculateFourPillars(birthdate, birthtime) {
-  const stems = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"];
-  const branches = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
+// 天干地支基础
+const heavenlyStems = ["甲", "乙", "丙", "丁", "戊", "己", "庚", "辛", "壬", "癸"];
+const earthlyBranches = ["子", "丑", "寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥"];
+const stemElements = {
+  "甲": "Wood", "乙": "Wood",
+  "丙": "Fire", "丁": "Fire",
+  "戊": "Earth", "己": "Earth",
+  "庚": "Metal", "辛": "Metal",
+  "壬": "Water", "癸": "Water"
+};
 
-  const date = new Date(birthdate + "T" + birthtime);
+// 四柱推算（当前仅年柱 + 简化日柱+时柱版本）
+function calculateBaZi(birthdate, birthtime) {
+  const date = new Date(`${birthdate}T${birthtime}`);
   const year = date.getFullYear();
   const month = date.getMonth() + 1;
   const day = date.getDate();
   const hour = date.getHours();
 
-  // 年柱
-  const yearStem = stems[(year - 4) % 10];
-  const yearBranch = branches[(year - 4) % 12];
+  // 年柱（最基础）
+  const yearStem = heavenlyStems[(year - 4) % 10];
+  const yearBranch = earthlyBranches[(year - 4) % 12];
 
-  // 月柱
-  const monthBranch = branches[(month + 1) % 12];
-  const monthStem = stems[(month + 1) % 10];
+  // 简化日干（日数取模）
+  const dayStem = heavenlyStems[(day + 1) % 10];
 
-  // 日柱
-  const dayStem = stems[(day + 1) % 10];
-  const dayBranch = branches[(day + 1) % 12];
-
-  // 时柱
+  // 简化时柱（按2小时分支）
   const hourIndex = Math.floor((hour + 1) / 2) % 12;
-  const hourBranch = branches[hourIndex];
-  const hourStem = stems[hourIndex % 10];
+  const hourBranch = earthlyBranches[hourIndex];
+  const hourStem = heavenlyStems[hourIndex % 10];
 
   return {
-    year: `${yearStem}${yearBranch}`,
-    month: `${monthStem}${monthBranch}`,
-    day: `${dayStem}${dayBranch}`,
-    hour: `${hourStem}${hourBranch}`
+    yearPillar: `${yearStem}${yearBranch}`,
+    dayStem: dayStem,
+    hourPillar: `${hourStem}${hourBranch}`,
+    element: stemElements[dayStem]
   };
 }
 
-// 升级版 简单报告生成
-function generateSimpleReport(baziResult, name) {
-  const { year, month, day, hour } = baziResult;
-
-  const luckyElement = getLuckyElement(year, month, day, hour);
+// 千人千面简报生成
+function generateSimpleReport(bazi, name) {
+  const traits = getElementTraits(bazi.element);
 
   document.getElementById("report-section").innerHTML = `
     <h2>Dear ${name}, here’s your Personalized Feng Shui Destiny</h2>
-    <h3>Your Four Pillars (BaZi):</h3>
-    <p>Year: ${year}, Month: ${month}, Day: ${day}, Hour: ${hour}</p>
+    <h3>Four Pillars Snapshot:</h3>
+    <p><strong>Year Pillar:</strong> ${bazi.yearPillar}</p>
+    <p><strong>Day Master:</strong> ${bazi.dayStem} (${bazi.element})</p>
+    <p><strong>Hour Pillar:</strong> ${bazi.hourPillar}</p>
 
     <h3>Personality:</h3>
-    <p>${luckyElement.personalityStrength}</p>
-    <p>${luckyElement.personalityWeakness}</p>
-    <p>${luckyElement.personalityAdvice}</p>
+    <p>${traits.personality}</p>
 
     <h3>Love & Relationships:</h3>
-    <p>${luckyElement.loveStrength}</p>
-    <p>${luckyElement.loveChallenge}</p>
-    <p>${luckyElement.loveAdvice}</p>
+    <p>${traits.love}</p>
 
     <h3>Family:</h3>
-    <p>${luckyElement.familyStrength}</p>
-    <p>${luckyElement.familyPotentialIssue}</p>
-    <p>${luckyElement.familyAdvice}</p>
+    <p>${traits.family}</p>
 
     <h3>Wealth Outlook:</h3>
-    <p>${luckyElement.wealthOpportunity}</p>
-    <p>${luckyElement.wealthRisk}</p>
-    <p>${luckyElement.wealthAdvice}</p>
+    <p>${traits.wealth}</p>
 
     <div style="margin-top:30px; padding:20px; background:#fdf7e3; border-radius:12px; text-align:center;">
-      <p><strong>Unlock your Full Feng Shui Destiny Report to discover deeper insights, personalized enhancement strategies, and timing for your luck cycles!</strong></p>
+      <p><strong>Unlock your Full Feng Shui Destiny Report for in-depth analysis, advice, and luck cycles tailored to your BaZi.</strong></p>
       <button onclick="redirectToPayment()" style="margin-top:20px; padding:12px 24px; background-color:#c7a76c; color:white; border:none; border-radius:8px; font-size:16px; cursor:pointer;">Unlock Full Report for $4.99</button>
     </div>
   `;
 }
 
-// 简单五行运势示例
-function getLuckyElement(year, month, day, hour) {
-  const elements = [
-    {
-      personalityStrength: "You are vibrant, sociable, and naturally attract positive attention.",
-      personalityWeakness: "However, you may sometimes overlook critical details in your enthusiasm.",
-      personalityAdvice: "Balancing spontaneity with careful planning will enhance your personal growth.",
-      
-      loveStrength: "You build warm and genuine emotional connections.",
-      loveChallenge: "At times, emotional impulsiveness could cause misunderstandings.",
-      loveAdvice: "Practicing mindful communication will deepen your bonds.",
-
-      familyStrength: "Your optimism uplifts your family and strengthens the home.",
-      familyPotentialIssue: "Unspoken expectations may lead to minor tensions.",
-      familyAdvice: "Regular open conversations will preserve harmony.",
-
-      wealthOpportunity: "Your dynamic energy opens doors to new financial opportunities.",
-      wealthRisk: "A tendency toward impulsiveness may risk unstable investments.",
-      wealthAdvice: "Maintaining a strategic financial plan will secure your future prosperity."
-    },
-    {
-      personalityStrength: "You are methodical, resilient, and deeply dependable.",
-      personalityWeakness: "Yet, excessive caution may sometimes limit your opportunities.",
-      personalityAdvice: "Cultivating courage to seize opportunities will empower you further.",
-      
-      loveStrength: "Loyal and steady, your relationships are built on trust.",
-      loveChallenge: "Overthinking may create unnecessary emotional distance.",
-      loveAdvice: "Staying emotionally open will sustain your intimacy.",
-
-      familyStrength: "You provide a strong backbone of support to your family.",
-      familyPotentialIssue: "Overcommitment to duties may cause self-neglect.",
-      familyAdvice: "Balancing personal needs with responsibilities strengthens family bonds.",
-
-      wealthOpportunity: "Stable investment opportunities will naturally come your way.",
-      wealthRisk: "Missed chances due to hesitancy could delay financial growth.",
-      wealthAdvice: "Timely decisions backed by careful analysis will bring success."
-    }
-  ];
-
-  const randomIndex = (year.charCodeAt(0) + month.charCodeAt(0) + day.charCodeAt(0) + hour.charCodeAt(0)) % elements.length;
-  return elements[randomIndex];
+// 五行属性分析话术（千人千面）
+function getElementTraits(element) {
+  switch (element) {
+    case "Wood":
+      return {
+        personality: "You are idealistic, energetic, and growth-oriented. You thrive when building things from scratch.",
+        love: "You're passionate yet sometimes stubborn in love. Balance your ideals with reality.",
+        family: "You bring vitality to your family but may clash with rigid traditions.",
+        wealth: "You create wealth through innovation, but need patience for sustainable growth."
+      };
+    case "Fire":
+      return {
+        personality: "You are dynamic, expressive, and full of ambition. You inspire those around you.",
+        love: "Your love burns fast and bright—watch out for emotional impulsiveness.",
+        family: "You often take the leadership role at home but may need to listen more.",
+        wealth: "You’re bold in money matters—success follows when passion meets timing."
+      };
+    case "Earth":
+      return {
+        personality: "You are stable, dependable, and deeply grounded. Others trust your judgment.",
+        love: "You are loyal but can be emotionally reserved—openness deepens bonds.",
+        family: "You’re the anchor of the family, sometimes at the cost of your own needs.",
+        wealth: "You accumulate wealth slowly but securely through effort and planning."
+      };
+    case "Metal":
+      return {
+        personality: "You are precise, disciplined, and justice-driven. You value clarity and results.",
+        love: "You are protective yet cautious in love—sometimes too guarded.",
+        family: "You expect high standards, which may create distance—empathy builds bridges.",
+        wealth: "You achieve success through strategy and structure, not shortcuts."
+      };
+    case "Water":
+      return {
+        personality: "You are intuitive, fluid, and intellectually sharp. You adapt and observe deeply.",
+        love: "Emotionally sensitive and loyal, you crave deep connection but fear betrayal.",
+        family: "You are emotionally attuned to family needs but may carry invisible burdens.",
+        wealth: "Your income may come in waves—stay focused to ride the tides skillfully."
+      };
+    default:
+      return {
+        personality: "Unique and complex, you’re still being shaped by cosmic forces.",
+        love: "Your love journey is still unfolding—openness leads to discovery.",
+        family: "You are evolving into your family role—reflect and redefine.",
+        wealth: "Your potential is hidden—seek clarity to reveal your path."
+      };
+  }
 }
 
-// 跳转到付费购买页面
+// 支付跳转
 function redirectToPayment() {
   window.location.href = `/products/full-fengshui-destiny-report?redirect=${encodeURIComponent(window.fullReportLink)}`;
 }
